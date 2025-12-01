@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head><title>Login</title></head>
+<body>
+  <h2>Connexion / Inscription</h2>
+  <form id="authForm">
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="password" id="password" placeholder="Mot de passe" required />
+    <button type="submit">Se connecter / Inscrire</button>
+  </form>
+  <div id="message"></div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    const supabaseUrl = 'https://YOUR_PROJECT_REF.supabase.co'
+    const supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY'
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+    const form = document.getElementById('authForm')
+    const message = document.getElementById('message')
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const email = document.getElementById('email').value
+      const password = document.getElementById('password').value
+      message.textContent = ""
+
+      // Essaie d'abord de se connecter
+      let { data, error } = await supabase.auth.signInWithPassword({ email, password })
+
+      if (error && error.status === 400) {
+        // Si utilisateur pas trouvé, on crée un compte (sign up)
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password })
+        if (signUpError) {
+          message.textContent = 'Erreur inscription : ' + signUpError.message
+          return
+        }
+        message.textContent = 'Inscription réussie, confirmez votre email'
+        return
+      }
+
+      if (error) {
+        message.textContent = 'Erreur connexion : ' + error.message
+        return
+      }
+
+      message.textContent = 'Connecté ! Redirection…'
+      // Stocke le token dans localStorage (si utile)
+      localStorage.setItem('supabase_token', data.session.access_token)
+      // Redirige vers la page index ou app
+      window.location.href = '/'
+    })
+  </script>
+</body>
+</html>
