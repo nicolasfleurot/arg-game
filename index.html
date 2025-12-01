@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Test GPS → Supabase</title>
+  <title>Test GPS Supabase</title>
 </head>
 <body>
   <h2>Test GPS</h2>
@@ -10,7 +10,7 @@
 
 <script>
 const USER_ID = "u-test123";
-const API_URL = "/api/position"; // si HTML sur Vercel même domaine
+const API_URL = "/api/position"; // même domaine Vercel
 
 function sendPosition(lat, lon) {
   fetch(API_URL, {
@@ -20,7 +20,11 @@ function sendPosition(lat, lon) {
   })
   .then(res => res.json())
   .then(data => {
-    document.getElementById("status").innerText = `Position envoyée : ${lat}, ${lon} → ${JSON.stringify(data)}`;
+    if (data.ok) {
+      document.getElementById("status").innerText = `Position envoyée : ${lat}, ${lon}`;
+    } else {
+      document.getElementById("status").innerText = `Erreur API : ${data.error}`;
+    }
     console.log("Réponse API :", data);
   })
   .catch(err => {
