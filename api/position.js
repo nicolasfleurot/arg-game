@@ -5,53 +5,45 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
+// CORS AVANT TOUT
 export default async function handler(req, res) {
+  // Headers CORS IMMÉDIATS (avant toute logique)
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'POST only' });
+    return;
+  }
+
   try {
-    // CORS si besoin
-    if (req.method === "OPTIONS") {
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
-      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-      return res.status(200).json({ ok: true });
-    }
-
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
-    }
-
-    // Body string ou déjà parsé
-    let body = req.body;
-    if (typeof body === "string") {
-      try {
-        body = JSON.parse(body);
-      } catch (err) {
-        return res.status(400).json({ error: "JSON invalide" });
-      }
-    }
-
-    const { user_id, lat, lon } = body || {};
+    const { user_id, lat, lon } = typeof req.body === 'string' 
+      ? JSON.parse(req.body) 
+      : req.body ?? {};
 
     if (!user_id || lat == null || lon == null) {
-      return res
-        .status(400)
-        .json({ error: "user_id, lat et lon sont requis" });
+      return res.status(400).json({ error: 'Missing fields' });
     }
 
-    const { data, error } = await supabase
-      .from("positions")
-      .upsert(
-        { user_id, lat, lon },
-        { onConflict: ["user_id"] }
-      );
+    const { error } = await supabase
+      .from('positions')
+      .upsert({ user_id, lat, lon });
 
     if (error) {
-      console.error("Supabase error:", error);
+      console.error('Supabase error:', error);
       return res.status(500).json({ error: error.message });
     }
 
-    return res.status(200).json({ ok: true, data });
+    res.status(200).json({ ok: true });
   } catch (e) {
-    console.error("Handler error:", e);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error('Error:', e);
+    res.status(500).json({ error: 'Server error' });
   }
 }
