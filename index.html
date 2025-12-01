@@ -2,15 +2,15 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Test GPS → Godot</title>
+  <title>Test GPS → Supabase</title>
 </head>
 <body>
   <h2>Test GPS</h2>
   <div id="status">En attente de GPS…</div>
 
 <script>
-const USER_ID = "u-test123"; // identifiant fixe pour test
-const API_URL = "https://arg-game-pied.vercel.app/api/position"; // ton endpoint Vercel POST
+const USER_ID = "u-test123";
+const API_URL = "/api/position"; // si HTML sur Vercel même domaine
 
 function sendPosition(lat, lon) {
   fetch(API_URL, {
@@ -18,8 +18,10 @@ function sendPosition(lat, lon) {
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ user_id: USER_ID, lat, lon })
   })
-  .then(() => {
-    document.getElementById("status").innerText = `Position envoyée : ${lat}, ${lon}`;
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("status").innerText = `Position envoyée : ${lat}, ${lon} → ${JSON.stringify(data)}`;
+    console.log("Réponse API :", data);
   })
   .catch(err => {
     document.getElementById("status").innerText = "Erreur fetch : " + err;
@@ -37,7 +39,7 @@ if ("geolocation" in navigator) {
     },
     (err) => {
       document.getElementById("status").innerText = "Erreur GPS : " + err.message;
-      console.error("Erreur GPS :", err);
+      console.error(err);
     }
   );
 } else {
