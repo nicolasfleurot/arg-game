@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Test GPS → Godot</title>
+</head>
+<body>
+  <h2>Test GPS</h2>
+  <div id="status">En attente de GPS…</div>
+
+<script>
+const USER_ID = "u-test123"; // identifiant fixe pour test
+const API_URL = "https://arg-game-pied.vercel.app/api/position"; // ton endpoint Vercel POST
+
+function sendPosition(lat, lon) {
+  fetch(API_URL, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ user_id: USER_ID, lat, lon })
+  })
+  .then(() => {
+    document.getElementById("status").innerText = `Position envoyée : ${lat}, ${lon}`;
+  })
+  .catch(err => {
+    document.getElementById("status").innerText = "Erreur fetch : " + err;
+    console.error(err);
+  });
+}
+
+if ("geolocation" in navigator) {
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      console.log("GPS récupéré :", lat, lon);
+      sendPosition(lat, lon);
+    },
+    (err) => {
+      document.getElementById("status").innerText = "Erreur GPS : " + err.message;
+      console.error("Erreur GPS :", err);
+    }
+  );
+} else {
+  document.getElementById("status").innerText = "La géolocalisation n'est pas supportée.";
+}
+</script>
+</body>
+</html>
