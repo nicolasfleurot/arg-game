@@ -6,32 +6,30 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  // CORS pour test
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === "OPTIONS") {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    return res.status(200).end();
+  }
 
-  if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).send("Method not allowed");
 
   let body;
   try {
-    body = await req.json(); // important !!
+    body = JSON.parse(req.body); // ✅ corrige le 500
   } catch (err) {
     return res.status(400).json({ error: "Invalid JSON" });
   }
 
   const { user_id, lat, lon } = body;
+  if (!user_id || !lat || !lon) return res.status(400).json({ error: "user_id, lat et lon requis" });
 
-  if (!user_id || !lat || !lon) {
-    return res.status(400).json({ error: "user_id, lat et lon requis" });
-  }
-
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("positions")
-    .upsert({ user_id, lat, lon });
+    .upsert({ user_id, lat, lon }); // ou .insert({ user_id, lat, lon })
 
   if (error) return res.status(500).json({ error: error.message });
 
-  return res.status(200).json({ ok: true });
+  return res.status(200).json({ ok: true, data });
 }
