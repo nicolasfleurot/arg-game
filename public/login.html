@@ -1,57 +1,42 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head><title>Login</title></head>
+<head><meta charset="utf-8"><title>Login</title></head>
 <body>
-  <h2>Connexion / Inscription</h2>
-  <form id="authForm">
-    <input type="email" id="email" placeholder="Email" required />
-    <input type="password" id="password" placeholder="Mot de passe" required />
-    <button type="submit">Se connecter / Inscrire</button>
-  </form>
-  <div id="message"></div>
+  <h2>Login</h2>
+  <label>Email: <input id="email" type="email"></label><br/>
+  <label>Password: <input id="password" type="password"></label><br/>
+  <button id="login">Login</button>
+  <div id="status"></div>
 
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+<script type="module">
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    const supabaseUrl = 'https://YOUR_PROJECT_REF.supabase.co'
-    const supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY'
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-    const form = document.getElementById('authForm')
-    const message = document.getElementById('message')
+document.getElementById('login').addEventListener('click', async () => {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault()
-      const email = document.getElementById('email').value
-      const password = document.getElementById('password').value
-      message.textContent = ""
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-      // Essaie d'abord de se connecter
-      let { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) {
+    document.getElementById('status').innerText = 'Login error: ' + error.message;
+    return;
+  }
 
-      if (error && error.status === 400) {
-        // Si utilisateur pas trouvé, on crée un compte (sign up)
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password })
-        if (signUpError) {
-          message.textContent = 'Erreur inscription : ' + signUpError.message
-          return
-        }
-        message.textContent = 'Inscription réussie, confirmez votre email'
-        return
-      }
+  // data.session.access_token est le token JWT
+  const token = data.session?.access_token;
+  if (!token) {
+    document.getElementById('status').innerText = 'Connexion réussie, mais pas de token';
+    return;
+  }
 
-      if (error) {
-        message.textContent = 'Erreur connexion : ' + error.message
-        return
-      }
-
-      message.textContent = 'Connecté ! Redirection…'
-      // Stocke le token dans localStorage (si utile)
-      localStorage.setItem('supabase_token', data.session.access_token)
-      // Redirige vers la page index ou app
-      window.location.href = '/'
-    })
-  </script>
+  // On peut stocker la session en localStorage ou garder supabase client qui gère ça automatiquement.
+  localStorage.setItem('sb_access_token', token);
+  document.getElementById('status').innerText = 'Connecté. Tu peux aller sur la page GPS.';
+});
+</script>
 </body>
 </html>
