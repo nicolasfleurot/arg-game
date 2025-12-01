@@ -2,25 +2,21 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY // service_role key
+  process.env.SUPABASE_SERVICE_KEY
 );
 
 export default async function handler(req, res) {
-  // CORS
+  // CORS pour test
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // OPTIONS préflight
   if (req.method === "OPTIONS") return res.status(200).end();
-
-  // POST uniquement
   if (req.method !== "POST") return res.status(405).send("Method not allowed");
 
-  // ⚡ Parser correctement le JSON
   let body;
   try {
-    body = await req.json();
+    body = await req.json(); // important !!
   } catch (err) {
     return res.status(400).json({ error: "Invalid JSON" });
   }
@@ -31,7 +27,6 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "user_id, lat et lon requis" });
   }
 
-  // Upsert dans Supabase
   const { error } = await supabase
     .from("positions")
     .upsert({ user_id, lat, lon });
