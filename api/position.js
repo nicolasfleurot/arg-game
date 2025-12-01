@@ -6,19 +6,15 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  // 🔹 Headers CORS pour autoriser toutes les origines (pratique pour test)
-  res.setHeader('Access-Control-Allow-Origin', '*'); // ou remplace * par ton domaine
+  // 🔹 Headers CORS
+  res.setHeader('Access-Control-Allow-Origin', 'https://coral-bee-703513.hostingersite.com'); // ton domaine exact
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // 🔹 Préflight OPTIONS
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
+  // 🔹 Répond aux requêtes OPTIONS (préflight)
+  if (req.method === "OPTIONS") return res.status(200).end();
 
-  if (req.method !== "POST") {
-    return res.status(405).send("Method not allowed");
-  }
+  if (req.method !== "POST") return res.status(405).send("Method not allowed");
 
   const { user_id, lat, lon } = req.body;
 
