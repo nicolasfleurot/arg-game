@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Sign Up</title>
+</head>
+<body>
+  <h2>Sign Up</h2>
+  <div>
+    <label>Username: <input id="username" /></label><br/>
+    <label>Email: <input id="email" type="email" /></label><br/>
+    <label>Password: <input id="password" type="password" /></label><br/>
+    <button id="signup">Sign Up</button>
+  </div>
+  <div id="status"></div>
+
+<script type="module">
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+document.getElementById('signup').addEventListener('click', async () => {
+  const username = document.getElementById('username').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!username || !email || !password) {
+    return document.getElementById('status').innerText = 'Tous les champs requis';
+  }
+
+  // 1) Création utilisateur via Supabase Auth
+  const { data, error } = await supabase.auth.signUp({ email, password });
+
+  if (error) {
+    document.getElementById('status').innerText = 'Erreur signup: ' + error.message;
+    return;
+  }
+
+  // data.user peut être null si confirmation par e-mail requise — wait for user in most setups.
+  const user = data.user;
+  if (!user) {
+    document.getElementById('status').innerText = 'Inscription déclenchée. Vérifie ta boîte mail pour confirmer.';
+    // Optionnel : stocker username temporairement côté client until confirmed.
+    return;
+  }
+
+  // 2) Créer profil (id = user.id)
+  const { error: pErr } = await supabase
+    .from('profiles')
+    .insert({ id: user.id, username });
+
+  if (pErr) {
+    document.getElementById('status').innerText = 'Erreur création de profil: ' + pErr.message;
+    return;
+  }
+
+  document.getElementById('status').innerText = 'Compte créé ! Connecte-toi.';
+  // Optionnel : rediriger vers login page
+});
+</script>
+</body>
+</html>
